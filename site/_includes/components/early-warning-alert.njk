@@ -1,0 +1,143 @@
+<!-- Early Warning System Alert Component -->
+<div class="early-warning-alert" x-show="earlyWarnings && earlyWarnings.length > 0" x-transition:enter="transition ease-out duration-500" x-transition:enter-start="opacity-0 transform scale-95" x-transition:enter-end="opacity-100 transform scale-100">
+    <div class="bg-gradient-to-r from-yellow-400 to-orange-500 rounded-lg shadow-lg border-2 border-yellow-500 p-6 mb-8 relative overflow-hidden">
+        <!-- Animated background pattern -->
+        <div class="absolute inset-0 opacity-10">
+            <div class="absolute inset-0 bg-repeat" style="background-image: url('data:image/svg+xml,<svg width=\"60\" height=\"60\" viewBox=\"0 0 60 60\" xmlns=\"http://www.w3.org/2000/svg\"><g fill=\"none\" fill-rule=\"evenodd\"><g fill=\"%23000\" fill-opacity=\"0.1\"><circle cx=\"7\" cy=\"7\" r=\"1\"/><circle cx=\"7\" cy=\"20\" r=\"1\"/><circle cx=\"7\" cy=\"33\" r=\"1\"/><circle cx=\"7\" cy=\"46\" r=\"1\"/></g></g></svg>');"></div>
+        </div>
+        
+        <div class="relative flex items-start gap-4">
+            <!-- Animated warning icon -->
+            <div class="flex-shrink-0">
+                <div class="relative">
+                    <span class="text-4xl animate-pulse">⚡</span>
+                    <!-- Pulsing ring effect -->
+                    <div class="absolute inset-0 rounded-full border-2 border-yellow-300 animate-ping"></div>
+                </div>
+            </div>
+            
+            <div class="flex-1 text-yellow-900">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        🚨 Early Warning System Active
+                        <span class="bg-red-600 text-white text-xs px-2 py-1 rounded-full animate-bounce">LIVE</span>
+                    </h3>
+                    
+                    <!-- Real-time status indicator -->
+                    <div class="flex items-center space-x-2 text-sm">
+                        <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                        <span class="font-medium">Real-time monitoring active</span>
+                    </div>
+                </div>
+                
+                <p class="text-lg font-medium mb-4">
+                    NOPE has detected <strong x-text="earlyWarnings.length"></strong> vulnerabilities 
+                    showing early exploitation signals 
+                    <span class="text-sm font-normal">(14-21 days before widespread exploitation)</span>
+                </p>
+                
+                <!-- Warning details -->
+                <div class="space-y-3 mb-4">
+                    <template x-for="(warning, index) in earlyWarnings.slice(0, 3)" :key="warning.cve_id">
+                        <div class="flex items-center justify-between bg-white/20 backdrop-blur-sm rounded-lg p-3 border border-yellow-300/30">
+                            <div class="flex items-center space-x-3">
+                                <!-- Severity indicator -->
+                                <div class="flex items-center">
+                                    <span x-show="warning.warning_score >= 0.8" class="text-red-600 text-xl">🔴</span>
+                                    <span x-show="warning.warning_score >= 0.6 && warning.warning_score < 0.8" class="text-orange-600 text-xl">🟠</span>
+                                    <span x-show="warning.warning_score < 0.6" class="text-yellow-600 text-xl">🟡</span>
+                                </div>
+                                
+                                <div>
+                                    <div class="font-mono font-bold text-lg" x-text="warning.cve_id"></div>
+                                    <div class="text-sm opacity-90" x-text="warning.reason || 'Unusual exploitation patterns detected'"></div>
+                                </div>
+                            </div>
+                            
+                            <div class="text-right">
+                                <div class="text-lg font-bold" x-text="`${(warning.warning_score * 100).toFixed(0)}%`"></div>
+                                <div class="text-xs opacity-75">Alert Score</div>
+                            </div>
+                        </div>
+                    </template>
+                    
+                    <!-- Show count if more warnings exist -->
+                    <div x-show="earlyWarnings.length > 3" class="text-center py-2">
+                        <span class="text-sm font-medium opacity-75">
+                            ... and <span x-text="earlyWarnings.length - 3"></span> more early warnings
+                        </span>
+                    </div>
+                </div>
+                
+                <!-- Action buttons -->
+                <div class="flex flex-wrap gap-3">
+                    <button @click="view = 'early-warnings'"
+                            class="bg-yellow-900 text-yellow-100 px-4 py-2 rounded-md font-semibold hover:bg-yellow-800 transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"></path>
+                        </svg>
+                        View All Early Warnings
+                    </button>
+                    
+                    <button @click="refreshPredictions()"
+                            class="bg-white/20 text-yellow-900 px-4 py-2 rounded-md font-semibold hover:bg-white/30 transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                        </svg>
+                        Refresh Alerts
+                    </button>
+                    
+                    <a href="/analytics.html" 
+                       class="bg-blue-600 text-white px-4 py-2 rounded-md font-semibold hover:bg-blue-700 transition-colors flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        View Analytics
+                    </a>
+                </div>
+                
+                <!-- Intelligence context -->
+                <div class="mt-4 p-3 bg-white/10 rounded-md text-sm">
+                    <div class="flex items-center gap-2 mb-2 font-semibold">
+                        <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd"></path>
+                        </svg>
+                        Intelligence Sources
+                    </div>
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-2 text-xs">
+                        <div class="flex items-center gap-1">
+                            <div class="w-2 h-2 bg-green-400 rounded-full"></div>
+                            Honeypot Networks
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full"></div>
+                            DNS Anomalies
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <div class="w-2 h-2 bg-purple-400 rounded-full"></div>
+                            Dark Web Chatter
+                        </div>
+                        <div class="flex items-center gap-1">
+                            <div class="w-2 h-2 bg-orange-400 rounded-full"></div>
+                            Scanning Activity
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Dismiss button -->
+            <button @click="earlyWarnings = []" 
+                    class="flex-shrink-0 text-yellow-700 hover:text-yellow-900 transition-colors p-1">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                </svg>
+            </button>
+        </div>
+        
+        <!-- Bottom progress bar -->
+        <div class="absolute bottom-0 left-0 right-0 h-1 bg-yellow-600/20">
+            <div class="h-full bg-yellow-600 animate-pulse" style="width: 75%"></div>
+        </div>
+    </div>
+</div>

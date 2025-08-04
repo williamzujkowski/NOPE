@@ -1,0 +1,48 @@
+{
+  "warnings": [
+    {
+      "cve_id": "CVE-2024-12349",
+      "warning_score": 0.89,
+      "reason": "Rapid EPSS score increase detected - 0.15 to 0.72 in 48 hours",
+      "predicted_days": 12,
+      "signals": {
+        "honeypot_activity": 0.85,
+        "dns_anomalies": 0.67,
+        "poc_development": 0.91,
+        "underground_chatter": 0.43
+      },
+      "first_detected": "2024-08-02T14:30:00Z",
+      "last_updated": "2024-08-04T04:32:56Z",
+      "confidence": 0.89,
+      "description": "SQL injection vulnerability in popular CMS",
+      "vendor": "WordPress",
+      "product": "Core"
+    },
+    {
+      "cve_id": "CVE-2024-12350", 
+      "warning_score": 0.76,
+      "reason": "Multiple proof-of-concept exploits published on GitHub",
+      "predicted_days": 18,
+      "signals": {
+        "honeypot_activity": 0.52,
+        "dns_anomalies": 0.28,
+        "poc_development": 0.94,
+        "underground_chatter": 0.61
+      },
+      "first_detected": "2024-08-01T09:15:00Z",
+      "last_updated": "2024-08-04T04:32:56Z",
+      "confidence": 0.76,
+      "description": "Buffer overflow in network service daemon",
+      "vendor": "Linux",
+      "product": "Kernel"
+    }
+  ],
+  "metadata": {
+    "total_warnings": 2,
+    "critical_warnings": 1,
+    "system_health": "operational",
+    "last_updated": "2024-08-04T04:32:56Z",
+    "monitoring_sources": 47,
+    "active_correlations": 23
+  }
+}

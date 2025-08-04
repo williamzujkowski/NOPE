@@ -1,0 +1,271 @@
+---
+layout: layouts/base.njk
+title: Predictions
+description: Comprehensive view of all NOPE predictions with advanced filtering, search, and detailed risk analysis
+---
+
+<div x-data="nopeDashboard()" x-init="init(); view = 'predictions'" class="container mx-auto px-4 py-8">
+    <!-- Page Header -->
+    <div class="bg-gradient-to-r from-indigo-600 to-purple-700 rounded-2xl p-8 mb-8 text-white">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+            <div>
+                <h1 class="text-4xl font-bold mb-2 flex items-center gap-3">
+                    🎯 All Predictions
+                    <span class="bg-white/20 text-sm px-3 py-1 rounded-full" x-text="`${predictions.length} total`"></span>
+                </h1>
+                <p class="text-xl opacity-90">
+                    Complete vulnerability intelligence with ML-powered risk assessment
+                </p>
+            </div>
+            
+            <!-- Quick Actions -->
+            <div class="flex gap-3 mt-4 md:mt-0">
+                <button @click="refreshPredictions()" 
+                        class="px-4 py-2 bg-white/20 rounded-lg hover:bg-white/30 transition-colors">
+                    <svg class="w-4 h-4 inline mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh
+                </button>
+                <a href="/early-warnings.html" 
+                   class="px-4 py-2 bg-yellow-500 text-yellow-900 rounded-lg hover:bg-yellow-400 transition-colors font-medium">
+                    Early Warnings
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div x-show="loading" class="text-center py-20">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-indigo-600 mx-auto mb-4"></div>
+        <h2 class="text-xl font-semibold mb-2">Loading All Predictions...</h2>
+        <p class="text-gray-600 dark:text-gray-400">Fetching complete vulnerability intelligence dataset</p>
+    </div>
+    
+    <!-- Main Content -->
+    <div x-show="!loading" style="display: none;" x-transition>
+        <!-- Advanced Filters -->
+        <div class="bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-8">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-semibold">Advanced Filtering & Search</h2>
+                <div class="flex items-center gap-4">
+                    <span class="text-sm text-gray-600 dark:text-gray-400" x-text="`Showing ${getFilterededictions().length} of ${predictions.length} predictions`"></span>
+                    <button @click="filters = { threat_level: 'all', confidence_min: 0.5, show_early_warnings: true, show_exploited_only: false, time_range: '7d', search_query: '' }; calculateStats()"
+                            class="text-sm text-indigo-600 hover:text-indigo-800 font-medium">
+                        Reset All
+                    </button>
+                </div>
+            </div>
+            
+            <!-- Search Row -->
+            <div class="mb-4">
+                <div class="relative">
+                    <input type="text" x-model="filters.search_query" @input="calculateStats()"
+                           placeholder="Search CVE ID, description, vendor, product, or any keyword..."
+                           class="w-full pl-12 pr-4 py-3 text-lg border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700">
+                    <svg class="absolute left-4 top-3.5 w-5 h-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                    </svg>
+                    <div x-show="filters.search_query" class="absolute right-3 top-3">
+                        <button @click="filters.search_query = ''; calculateStats()" class="text-gray-400 hover:text-gray-600">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+                            </svg>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Filter Controls -->
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Threat Level -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Threat Level</label>
+                    <select x-model="filters.threat_level" @change="calculateStats()"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700">
+                        <option value="all">All Levels</option>
+                        <option value="CRITICAL">🚨 Critical</option>
+                        <option value="HIGH">⚠️ High</option>
+                        <option value="ELEVATED">📊 Elevated</option>
+                        <option value="MODERATE">👀 Moderate</option>
+                        <option value="LOW">💤 Low</option>
+                    </select>
+                </div>
+                
+                <!-- Confidence Range -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">
+                        Confidence: <span x-text="`${(filters.confidence_min * 100).toFixed(0)}%+`"></span>
+                    </label>
+                    <input type="range" x-model="filters.confidence_min" @input="calculateStats()"
+                           min="0" max="1" step="0.05"
+                           class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                </div>
+                
+                <!-- Time Range -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Time Range</label>
+                    <select x-model="filters.time_range" @change="calculateStats()"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700">
+                        <option value="24h">Last 24 Hours</option>
+                        <option value="7d">Last 7 Days</option>
+                        <option value="30d">Last 30 Days</option>
+                        <option value="90d">Last 90 Days</option>
+                        <option value="all">All Time</option>
+                    </select>
+                </div>
+                
+                <!-- Sort By -->
+                <div>
+                    <label class="block text-sm font-medium mb-2">Sort By</label>
+                    <select x-model="sortBy" @change="calculateStats()"
+                            class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-gray-700">
+                        <option value="risk_score_desc">Risk Score (High to Low)</option>
+                        <option value="risk_score_asc">Risk Score (Low to High)</option>
+                        <option value="confidence_desc">Confidence (High to Low)</option>
+                        <option value="date_desc">Date (Newest First)</option>
+                        <option value="date_asc">Date (Oldest First)</option>
+                        <option value="cve_id">CVE ID (A-Z)</option>
+                    </select>
+                </div>
+            </div>
+            
+            <!-- Filter Toggles -->
+            <div class="mt-4 flex flex-wrap gap-4">
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" x-model="filters.show_early_warnings" @change="calculateStats()"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm font-medium">Include Early Warnings</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" x-model="filters.show_exploited_only" @change="calculateStats()"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm font-medium">Exploitation Predicted Only</span>
+                </label>
+                <label class="flex items-center cursor-pointer">
+                    <input type="checkbox" x-model="filters.show_high_confidence_only" @change="calculateStats()"
+                           class="rounded border-gray-300 text-indigo-600 focus:ring-indigo-500">
+                    <span class="ml-2 text-sm font-medium">High Confidence Only (80%+)</span>
+                </label>
+            </div>
+        </div>
+        
+        <!-- Summary Stats -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-red-100 dark:bg-red-900">
+                        <svg class="w-6 h-6 text-red-600 dark:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-2.5L13.732 4c-.77-.833-1.964-.833-2.732 0L4.082 16.5c-.77.833.192 2.5 1.732 2.5z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Critical & High Risk</p>
+                        <p class="text-2xl font-semibold" x-text="getFilteredPredictions().filter(p => p.risk_score >= 70).length"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-green-100 dark:bg-green-900">
+                        <svg class="w-6 h-6 text-green-600 dark:text-green-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">High Confidence</p>
+                        <p class="text-2xl font-semibold" x-text="getFilteredPredictions().filter(p => (p.confidence || 0) >= 0.8).length"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-yellow-100 dark:bg-yellow-900">
+                        <svg class="w-6 h-6 text-yellow-600 dark:text-yellow-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Will Be Exploited</p>
+                        <p class="text-2xl font-semibold" x-text="getFilteredPredictions().filter(p => p.will_be_exploited).length"></p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="bg-white dark:bg-gray-800 rounded-lg p-6 shadow-lg border border-gray-200 dark:border-gray-700">
+                <div class="flex items-center">
+                    <div class="p-3 rounded-full bg-blue-100 dark:bg-blue-900">
+                        <svg class="w-6 h-6 text-blue-600 dark:text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                    </div>
+                    <div class="ml-4">
+                        <p class="text-sm font-medium text-gray-600 dark:text-gray-400">Avg Warning Time</p>
+                        <p class="text-2xl font-semibold" x-text="`${stats.average_warning_days} days`"></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Predictions Grid -->
+        <div class="space-y-8">
+            <!-- Empty State -->
+            <div x-show="getFilteredPredictions().length === 0" class="text-center py-20">
+                <div class="text-6xl mb-4">🔍</div>
+                <h3 class="text-xl font-semibold mb-2">No predictions match your criteria</h3>
+                <p class="text-gray-600 dark:text-gray-400 mb-4">Try adjusting your filters or search terms</p>
+                <button @click="filters = { threat_level: 'all', confidence_min: 0.5, show_early_warnings: true, show_exploited_only: false, time_range: 'all', search_query: '' }; calculateStats()"
+                        class="px-4 py-2 bg-indigo-600 text-white rounded-lg hover:bg-indigo-700 transition-colors">
+                    Clear All Filters
+                </button>
+            </div>
+            
+            <!-- Predictions List -->
+            <div x-show="getFilteredPredictions().length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                <template x-for="prediction in getFilteredPredictions()" :key="prediction.cve_id">
+                    <div class="animate-fade-in">
+                        {% include 'components/nope-card.njk' %}
+                    </div>
+                </template>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Export/Share Modal -->
+<div x-data="{ showExport: false }" 
+     x-show="showExport" 
+     x-transition:enter="transition ease-out duration-300" 
+     x-transition:enter-start="opacity-0" 
+     x-transition:enter-end="opacity-100"
+     class="fixed inset-0 z-50 overflow-y-auto" 
+     style="display: none;">
+    <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:block sm:p-0">
+        <div class="fixed inset-0 transition-opacity bg-gray-500 bg-opacity-75" @click="showExport = false"></div>
+        
+        <div class="inline-block w-full max-w-md my-8 overflow-hidden text-left align-middle transition-all transform bg-white dark:bg-gray-800 shadow-xl rounded-lg">
+            <div class="p-6">
+                <h3 class="text-lg font-semibold mb-4">Export Predictions</h3>
+                <div class="space-y-3">
+                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
+                        📊 Export as CSV
+                    </button>
+                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
+                        📄 Export as JSON
+                    </button>
+                    <button class="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md transition-colors">
+                        📋 Copy as Report
+                    </button>
+                </div>
+                <div class="mt-6 flex justify-end">
+                    <button @click="showExport = false" 
+                            class="px-4 py-2 text-gray-600 hover:text-gray-800 transition-colors">
+                        Cancel
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

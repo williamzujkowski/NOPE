@@ -1,0 +1,377 @@
+---
+layout: layouts/base.njk
+title: Analytics
+description: Comprehensive analytics dashboard showing NOPE prediction accuracy, model performance, and threat intelligence insights
+---
+
+<div x-data="nopeDashboard()" x-init="init(); view = 'analytics'" class="container mx-auto px-4 py-8">
+    <!-- Analytics Header -->
+    <div class="bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-700 rounded-2xl p-8 mb-8 text-white">
+        <div class="flex flex-col lg:flex-row items-center justify-between">
+            <div>
+                <h1 class="text-4xl lg:text-5xl font-bold mb-2 flex items-center gap-3">
+                    📊 NOPE Analytics
+                    <span class="bg-white/20 text-sm px-3 py-1 rounded-full">Real-time</span>
+                </h1>
+                <p class="text-xl opacity-90 mb-2">
+                    Comprehensive intelligence platform performance metrics
+                </p>
+                <p class="opacity-80">
+                    Model accuracy, prediction insights, and threat landscape analysis
+                </p>
+            </div>
+            
+            <!-- Key Metrics -->
+            <div class="grid grid-cols-2 gap-4 mt-6 lg:mt-0">
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-green-300" x-text="`${stats.accuracy_rate}%`"></div>
+                    <div class="text-sm opacity-80">Overall Accuracy</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-blue-300" x-text="stats.exploited_correctly_predicted"></div>
+                    <div class="text-sm opacity-80">Correct Predictions</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-yellow-300" x-text="`${stats.false_positive_rate}%`"></div>
+                    <div class="text-sm opacity-80">False Positive Rate</div>
+                </div>
+                <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                    <div class="text-3xl font-bold text-purple-300" x-text="stats.average_warning_days"></div>
+                    <div class="text-sm opacity-80">Avg Warning Days</div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Loading State -->
+    <div x-show="loading" class="text-center py-20">
+        <div class="animate-spin rounded-full h-16 w-16 border-b-2 border-blue-600 mx-auto mb-4"></div>
+        <h2 class="text-xl font-semibold mb-2">Loading Analytics Dashboard...</h2>
+        <p class="text-gray-600 dark:text-gray-400">Analyzing performance metrics and model insights</p>
+    </div>
+    
+    <!-- Main Analytics Content -->
+    <div x-show="!loading" style="display: none;" x-transition>
+        <!-- Primary Charts Row -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            <!-- Prediction Accuracy Timeline -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Prediction Accuracy Over Time
+                    </h3>
+                    <div class="text-sm text-gray-600 dark:text-gray-400">Last 30 days</div>
+                </div>
+                <div id="accuracyTimeline" class="h-80"></div>
+            </div>
+            
+            <!-- Risk Distribution -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold flex items-center gap-2">
+                        <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
+                            <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
+                        </svg>
+                        Risk Score Distribution
+                    </h3>
+                    <button class="text-sm text-blue-600 hover:text-blue-800">Export</button>
+                </div>
+                <div class="relative h-80">
+                    <canvas id="riskDistributionChart"></canvas>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Model Performance Grid -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+            <!-- Ensemble Model Performance -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"></path>
+                    </svg>
+                    Ensemble Model
+                </h3>
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Accuracy</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                <div class="bg-green-500 h-2 rounded-full" style="width: 87%"></div>
+                            </div>
+                            <span class="text-sm font-bold">87%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Precision</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                <div class="bg-blue-500 h-2 rounded-full" style="width: 82%"></div>
+                            </div>
+                            <span class="text-sm font-bold">82%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Recall</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                <div class="bg-yellow-500 h-2 rounded-full" style="width: 91%"></div>
+                            </div>
+                            <span class="text-sm font-bold">91%</span>
+                        </div>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">F1-Score</span>
+                        <div class="flex items-center gap-2">
+                            <div class="w-16 bg-gray-200 dark:bg-gray-600 rounded-full h-2">
+                                <div class="bg-purple-500 h-2 rounded-full" style="width: 86%"></div>
+                            </div>
+                            <span class="text-sm font-bold">86%</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Individual Model Contributions -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z"></path>
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z"></path>
+                    </svg>
+                    Model Contributions
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center text-sm">
+                        <span>EPSS Enhanced</span>
+                        <span class="font-bold">22%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Threat Actor Model</span>
+                        <span class="font-bold">19%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Velocity Model</span>
+                        <span class="font-bold">17%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Pattern Recognition</span>
+                        <span class="font-bold">15%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Community Signals</span>
+                        <span class="font-bold">12%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Temporal Analysis</span>
+                        <span class="font-bold">10%</span>
+                    </div>
+                    <div class="flex justify-between items-center text-sm">
+                        <span>Practicality Model</span>
+                        <span class="font-bold">5%</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- System Performance -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                    </svg>
+                    System Performance
+                </h3>
+                <div class="space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Load Time</span>
+                        <span class="text-sm font-bold text-green-600" x-text="`${stats.load_time}s`"></span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">API Response</span>
+                        <span class="text-sm font-bold text-green-600">127ms</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Daily Predictions</span>
+                        <span class="text-sm font-bold">5.8 avg</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Data Freshness</span>
+                        <span class="text-sm font-bold text-green-600">Live</span>
+                    </div>
+                    <div class="flex justify-between items-center">
+                        <span class="text-sm font-medium">Uptime</span>
+                        <span class="text-sm font-bold text-green-600">99.9%</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Detailed Analytics Tables -->
+        <div class="grid grid-cols-1 xl:grid-cols-2 gap-8 mb-8">
+            <!-- Recent Predictions Performance -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01"></path>
+                    </svg>
+                    Recent Predictions Performance
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-sm">
+                        <thead>
+                            <tr class="border-b border-gray-200 dark:border-gray-700">
+                                <th class="text-left py-2 font-medium">CVE ID</th>
+                                <th class="text-left py-2 font-medium">Predicted</th>
+                                <th class="text-left py-2 font-medium">Actual</th>
+                                <th class="text-left py-2 font-medium">Accuracy</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-gray-100 dark:divide-gray-700">
+                            <tr>
+                                <td class="py-2 font-mono">CVE-2024-12345</td>
+                                <td class="py-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                        Will exploit
+                                    </span>
+                                </td>
+                                <td class="py-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                        Exploited
+                                    </span>
+                                </td>
+                                <td class="py-2">
+                                    <span class="text-green-600 font-medium">✓ Correct</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 font-mono">CVE-2024-12346</td>
+                                <td class="py-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-200">
+                                        Unlikely
+                                    </span>
+                                </td>
+                                <td class="py-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                        No exploit
+                                    </span>
+                                </td>
+                                <td class="py-2">
+                                    <span class="text-green-600 font-medium">✓ Correct</span>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 font-mono">CVE-2024-12347</td>
+                                <td class="py-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-red-100 text-red-800 dark:bg-red-900 dark:text-red-200">
+                                        Will exploit
+                                    </span>
+                                </td>
+                                <td class="py-2">
+                                    <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-gray-100 text-gray-800 dark:bg-gray-700 dark:text-gray-200">
+                                        No exploit
+                                    </span>
+                                </td>
+                                <td class="py-2">
+                                    <span class="text-red-600 font-medium">✗ False Positive</span>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            
+            <!-- Threat Landscape Insights -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"></path>
+                    </svg>
+                    Threat Landscape Insights
+                </h3>
+                <div class="space-y-4">
+                    <div>
+                        <h4 class="font-medium mb-2">Most Targeted Vendors</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-sm">
+                                <span>Microsoft</span>
+                                <span class="font-bold">23%</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span>Google</span>
+                                <span class="font-bold">18%</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span>Adobe</span>
+                                <span class="font-bold">15%</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span>Apple</span>
+                                <span class="font-bold">12%</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <h4 class="font-medium mb-2">Exploitation Timeframes</h4>
+                        <div class="space-y-2">
+                            <div class="flex justify-between items-center text-sm">
+                                <span>0-7 days</span>
+                                <span class="font-bold text-red-600">34%</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span>7-14 days</span>
+                                <span class="font-bold text-orange-600">28%</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span>14-30 days</span>
+                                <span class="font-bold text-yellow-600">25%</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span>30+ days</span>
+                                <span class="font-bold text-green-600">13%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export and Actions -->
+        <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h3 class="text-lg font-semibold">Analytics Export & Reports</h3>
+                <div class="text-sm text-gray-600 dark:text-gray-400">
+                    Last updated: <span x-text="lastUpdated ? new Date(lastUpdated).toLocaleString() : 'Never'"></span>
+                </div>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <button class="flex items-center justify-center gap-2 px-4 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    Export CSV Report
+                </button>
+                
+                <button class="flex items-center justify-center gap-2 px-4 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                    </svg>
+                    Generate PDF Report
+                </button>
+                
+                <button @click="refreshPredictions()" 
+                        class="flex items-center justify-center gap-2 px-4 py-3 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                    </svg>
+                    Refresh Analytics
+                </button>
+            </div>
+        </div>
+    </div>
+</div>

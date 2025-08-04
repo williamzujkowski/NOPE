@@ -1,0 +1,270 @@
+---
+layout: layouts/base.njk
+title: NOPE Dashboard
+description: Advanced CVE Intelligence Dashboard with predictive analytics, real-time threat monitoring, and ML-powered risk assessment
+---
+
+<div x-data="nopeDashboard()" x-init="init()" class="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-gray-900 dark:to-gray-800">
+    <!-- Dashboard Header -->
+    <div class="container mx-auto px-4 py-8">
+        <div class="bg-gradient-to-r from-blue-600 to-purple-700 rounded-2xl p-8 mb-8 text-white shadow-2xl">
+            <div class="flex flex-col lg:flex-row items-center justify-between">
+                <div class="text-center lg:text-left mb-6 lg:mb-0">
+                    <h1 class="text-4xl lg:text-6xl font-bold mb-4 flex items-center gap-4">
+                        🐙 NOPE Dashboard
+                        <span class="text-lg bg-green-500 px-3 py-1 rounded-full animate-pulse">LIVE</span>
+                    </h1>
+                    <p class="text-xl lg:text-2xl opacity-90 mb-2">
+                        Predictive CVE Intelligence Platform
+                    </p>
+                    <p class="opacity-80 text-lg">
+                        Advanced machine learning models predict vulnerability exploitation 14-21 days in advance
+                    </p>
+                    <div class="mt-4 flex items-center justify-center lg:justify-start gap-4 text-sm">
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
+                            <span>Real-time monitoring</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-blue-400 rounded-full animate-pulse"></div>
+                            <span>ML predictions active</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-2 h-2 bg-purple-400 rounded-full animate-pulse"></div>
+                            <span>Early warning system</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Real-time Stats Grid -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold" x-text="stats.total_monitored"></div>
+                        <div class="text-sm opacity-80">CVEs Monitored</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-red-300" x-text="stats.high_risk"></div>
+                        <div class="text-sm opacity-80">High Risk</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-green-300" x-text="`${stats.accuracy_rate}%`"></div>
+                        <div class="text-sm opacity-80">Accuracy</div>
+                    </div>
+                    <div class="bg-white/10 backdrop-blur-sm rounded-xl p-4 text-center">
+                        <div class="text-3xl font-bold text-yellow-300" x-text="stats.average_warning_days"></div>
+                        <div class="text-sm opacity-80">Avg Warning Days</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Early Warning Alert -->
+        {% include 'components/early-warning-alert.njk' %}
+        
+        <!-- Loading State -->
+        <div x-show="loading" class="text-center py-20">
+            <div class="inline-flex items-center justify-center w-16 h-16 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin mb-4"></div>
+            <h2 class="text-xl font-semibold mb-2">Loading NOPE Intelligence...</h2>
+            <p class="text-gray-600 dark:text-gray-400">Analyzing predictive signals and threat correlations</p>
+        </div>
+        
+        <!-- Main Dashboard Content -->
+        <div x-show="!loading" style="display: none;" x-transition>
+            <!-- Advanced Filters Panel -->
+            <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6 mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h2 class="text-lg font-semibold flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"></path>
+                        </svg>
+                        Advanced Filtering & Search
+                    </h2>
+                    <button @click="filters = { threat_level: 'all', confidence_min: 0.5, show_early_warnings: true, show_exploited_only: false, time_range: '7d', search_query: '' }; calculateStats()"
+                            class="text-sm text-blue-600 hover:text-blue-800 font-medium">
+                        Reset Filters
+                    </button>
+                </div>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+                    <!-- Search -->
+                    <div class="xl:col-span-2">
+                        <label class="block text-sm font-medium mb-2">Search CVEs</label>
+                        <div class="relative">
+                            <input type="text" x-model="filters.search_query" @input="calculateStats()"
+                                   placeholder="Search CVE ID, description, vendor..."
+                                   class="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700">
+                            <svg class="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+                            </svg>
+                        </div>
+                    </div>
+                    
+                    <!-- Threat Level -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Threat Level</label>
+                        <select x-model="filters.threat_level" @change="calculateStats()"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700">
+                            <option value="all">All Levels</option>
+                            <option value="CRITICAL">🚨 Critical</option>
+                            <option value="HIGH">⚠️ High</option>
+                            <option value="ELEVATED">📊 Elevated</option>
+                            <option value="MODERATE">👀 Moderate</option>
+                            <option value="LOW">💤 Low</option>
+                        </select>
+                    </div>
+                    
+                    <!-- Confidence -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Min Confidence</label>
+                        <div class="space-y-2">
+                            <input type="range" x-model="filters.confidence_min" @input="calculateStats()"
+                                   min="0" max="1" step="0.1"
+                                   class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer dark:bg-gray-700">
+                            <div class="text-sm text-center font-medium" 
+                                 x-text="`${(filters.confidence_min * 100).toFixed(0)}%`"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Time Range -->
+                    <div>
+                        <label class="block text-sm font-medium mb-2">Time Range</label>
+                        <select x-model="filters.time_range" @change="calculateStats()"
+                                class="w-full px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 dark:bg-gray-700">
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Toggle Options -->
+                <div class="mt-4 flex flex-wrap gap-4">
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" x-model="filters.show_early_warnings" @change="calculateStats()"
+                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm font-medium">Include Early Warnings</span>
+                    </label>
+                    <label class="flex items-center cursor-pointer">
+                        <input type="checkbox" x-model="filters.show_exploited_only" @change="calculateStats()"
+                               class="rounded border-gray-300 text-blue-600 focus:ring-blue-500">
+                        <span class="ml-2 text-sm font-medium">Exploitation Predicted Only</span>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- Analytics Dashboard Grid -->
+            <div class="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8 mb-8">
+                <!-- Risk Distribution Chart -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-purple-600" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M2 10a8 8 0 018-8v8h8a8 8 0 11-16 0z"></path>
+                            <path d="M12 2.252A8.014 8.014 0 0117.748 8H12V2.252z"></path>
+                        </svg>
+                        Risk Distribution
+                    </h3>
+                    <div class="relative h-64">
+                        <canvas id="riskDistributionChart"></canvas>
+                    </div>
+                </div>
+                
+                <!-- Prediction Accuracy Timeline -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"></path>
+                        </svg>
+                        Prediction Accuracy
+                    </h3>
+                    <div id="accuracyTimeline" class="h-64"></div>
+                </div>
+                
+                <!-- Performance Metrics -->
+                <div class="bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-6">
+                    <h3 class="text-lg font-semibold mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path>
+                        </svg>
+                        Performance Metrics
+                    </h3>
+                    <div class="space-y-4">
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">Load Time</span>
+                            <span class="text-sm font-bold" x-text="`${stats.load_time}s`"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">False Positive Rate</span>
+                            <span class="text-sm font-bold" x-text="`${stats.false_positive_rate}%`"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">Predictions Today</span>
+                            <span class="text-sm font-bold" x-text="getFilteredPredictions().filter(p => new Date(p.prediction_date) > new Date(Date.now() - 24*60*60*1000)).length"></span>
+                        </div>
+                        <div class="flex justify-between items-center">
+                            <span class="text-sm font-medium">WebSocket Status</span>
+                            <span class="text-sm font-bold flex items-center gap-1">
+                                <div :class="isConnected ? 'bg-green-500' : 'bg-red-500'" class="w-2 h-2 rounded-full"></div>
+                                <span x-text="isConnected ? 'Connected' : 'Disconnected'"></span>
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Predictions Grid -->
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-6">
+                    <h2 class="text-2xl font-bold flex items-center gap-3">
+                        <span class="text-3xl">🎯</span>
+                        Current Predictions
+                        <span class="bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200 text-sm px-3 py-1 rounded-full font-normal"
+                              x-text="`${getFilteredPredictions().length} predictions`"></span>
+                    </h2>
+                    
+                    <div class="flex items-center space-x-4">
+                        <div class="text-sm text-gray-600 dark:text-gray-400" x-text="`Last updated: ${lastUpdated ? new Date(lastUpdated).toLocaleTimeString() : 'Never'}`"></div>
+                        <button @click="refreshPredictions()"
+                                class="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"></path>
+                            </svg>
+                            Refresh
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Empty State -->
+                <div x-show="getFilteredPredictions().length === 0" class="text-center py-20">
+                    <div class="text-6xl mb-4">🔍</div>
+                    <h3 class="text-xl font-semibold mb-2">No predictions match your filters</h3>
+                    <p class="text-gray-600 dark:text-gray-400 mb-4">Try adjusting your search criteria or time range</p>
+                    <button @click="filters = { threat_level: 'all', confidence_min: 0.5, show_early_warnings: true, show_exploited_only: false, time_range: '7d', search_query: '' }; calculateStats()"
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                        Clear All Filters
+                    </button>
+                </div>
+                
+                <!-- Predictions Grid -->
+                <div x-show="getFilteredPredictions().length > 0" class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <template x-for="prediction in getFilteredPredictions().slice(0, 20)" :key="prediction.cve_id">
+                        <div>
+                            {% include 'components/nope-card.njk' %}
+                        </div>
+                    </template>
+                </div>
+                
+                <!-- Load More Button -->
+                <div x-show="getFilteredPredictions().length > 20" class="text-center mt-8">
+                    <a href="/predictions.html" 
+                       class="inline-flex items-center px-8 py-3 bg-gradient-to-r from-blue-600 to-purple-600 text-white font-semibold rounded-lg hover:from-blue-700 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg">
+                        View All <span x-text="getFilteredPredictions().length"></span> Predictions
+                        <svg class="w-5 h-5 ml-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7l5 5m0 0l-5 5m5-5H6"></path>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

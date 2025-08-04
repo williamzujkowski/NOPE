@@ -1,0 +1,170 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          pip install ruff black mypy
+          npm ci
+          
+      - name: Run Python linters
+        run: |
+          ruff check src tests
+          black --check src tests
+          mypy src
+          
+      - name: Run JavaScript linters
+        run: |
+          npm run lint
+
+  test-python:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12"]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev,ml]"
+          
+      - name: Run unit tests
+        run: |
+          pytest tests/unit/ -v --cov=src --cov-report=xml
+          
+      - name: Run integration tests
+        run: |
+          pytest tests/integration/ -v
+          
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.xml
+          flags: unittests
+          
+  test-frontend:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install dependencies
+        run: npm ci
+        
+      - name: Run unit tests
+        run: npm run test:unit
+        
+      - name: Build site
+        run: npm run build
+        
+      - name: Run E2E tests
+        run: |
+          npx playwright install --with-deps
+          npm test
+
+  security:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Run security scans
+        run: |
+          pip install bandit[toml] safety
+          bandit -r src/ -ll
+          safety check
+          
+      - name: Run npm audit
+        run: |
+          npm audit --audit-level=high
+          
+      - name: Run TruffleHog
+        uses: trufflesecurity/trufflehog@main
+        with:
+          path: ./
+          base: ${{ github.event.repository.default_branch }}
+          head: HEAD
+          
+  validate-epss:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Install dependencies
+        run: pip install -e .
+        
+      - name: Validate EPSS compliance
+        run: |
+          python scripts/validate_epss_compliance.py \
+            --min-threshold 0.10 \
+            --fail-on-violations
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [lint, test-python, test-frontend, security]
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev,ml]"
+          npm ci
+          
+      - name: Build project
+        run: |
+          make build
+          
+      - name: Validate build
+        run: |
+          python scripts/validate_build.py \
+            --check-cve-count \
+            --check-data-integrity \
+            --check-no-stale-files

@@ -1,0 +1,193 @@
+name: NOPE Prediction Pipeline
+
+on:
+  schedule:
+    - cron: '0 */4 * * *'  # Every 4 hours
+  workflow_dispatch:
+    inputs:
+      force_rebuild:
+        description: 'Force complete rebuild'
+        type: boolean
+        default: false
+      emergency_mode:
+        description: 'Emergency response mode'
+        type: boolean
+        default: false
+
+env:
+  BASE_EPSS_THRESHOLD: "0.10"  # 88th percentile
+  MAX_DAILY_CVES: "8"
+  TARGET_DAILY_CVES: "5"
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  MODEL_VERSION: "2.0"
+
+jobs:
+  predict-and-deploy:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pages: write
+      id-token: write
+      
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: 'pip'
+          
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          
+      - name: Install dependencies
+        run: |
+          pip install -e ".[dev,ml]"
+          npm ci
+          
+      - name: Download ML models
+        run: |
+          python scripts/download_models.py \
+            --model-version ${{ env.MODEL_VERSION }} \
+            --model-path data/models/
+            
+      - name: Run security scans
+        run: |
+          # Python security
+          pip install bandit[toml] safety
+          bandit -r src/ -ll
+          safety check --json
+          
+          # JavaScript security  
+          npm audit --audit-level=high
+          
+      - name: Calculate dynamic thresholds
+        id: thresholds
+        run: |
+          python -m src.agents.filtering.dynamic_threshold_agent \
+            --analyze-landscape \
+            --output-json > thresholds.json
+          
+          echo "epss_threshold=$(jq -r .default thresholds.json)" >> $GITHUB_OUTPUT
+          echo "daily_target=$(jq -r .daily_target thresholds.json)" >> $GITHUB_OUTPUT
+          
+      - name: Execute prediction pipeline
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SHODAN_API_KEY: ${{ secrets.SHODAN_API_KEY }}
+          VIRUSTOTAL_API_KEY: ${{ secrets.VIRUSTOTAL_API_KEY }}
+          FORCE_REBUILD: ${{ inputs.force_rebuild }}
+          EMERGENCY_MODE: ${{ inputs.emergency_mode }}
+        run: |
+          python -m src.agents.controller_agent \
+            --mode predictive \
+            --epss-threshold ${{ steps.thresholds.outputs.epss_threshold }} \
+            --enable-all-models \
+            --enable-correlation-engine \
+            --enable-early-warning \
+            --target-daily-cves ${{ steps.thresholds.outputs.daily_target }} \
+            --force-rebuild ${{ env.FORCE_REBUILD }} \
+            --emergency ${{ env.EMERGENCY_MODE }} \
+            --output-dir data/predictions/
+            
+      - name: Validate predictions
+        run: |
+          python scripts/validate_predictions.py \
+            --predictions-dir data/predictions/ \
+            --min-confidence 0.5 \
+            --max-daily-predictions 10 \
+            --require-risk-factors \
+            --fail-on-anomalies
+            
+      - name: Generate accuracy report
+        run: |
+          python scripts/generate_metrics.py \
+            --mode accuracy \
+            --predictions-dir data/predictions/ \
+            --historical-data data/historical/ \
+            --output-file api/metrics/accuracy.json
+            
+      - name: Build enhanced site
+        run: npm run build
+        
+      - name: Run comprehensive tests
+        run: |
+          # Unit tests with benchmarks
+          pytest tests/unit/ --benchmark-only
+          
+          # ML model tests
+          pytest tests/ml/ -v
+          
+          # Integration tests
+          pytest tests/integration/
+          
+          # E2E tests
+          npm test
+          
+      - name: Generate SBOM
+        run: |
+          # Python SBOM
+          pip install cyclonedx-bom
+          cyclonedx-py -o sbom-python.json
+          
+          # JavaScript SBOM
+          npx @cyclonedx/cyclonedx-npm --output-file sbom-javascript.json
+          
+          # Combine SBOMs
+          python scripts/combine_sboms.py
+          
+      - name: Deploy to GitHub Pages
+        if: success()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./_site
+          force_orphan: true
+          cname: nope.security
+          
+      - name: Export metrics to Prometheus
+        if: always()
+        run: |
+          python scripts/export_metrics.py \
+            --prometheus-gateway ${{ secrets.PROMETHEUS_GATEWAY }} \
+            --job-name nope-prediction-pipeline \
+            --metrics-file api/metrics/pipeline.json
+            
+      - name: Verify deployment
+        if: success()
+        run: |
+          sleep 120  # Wait for CDN propagation
+          
+          python tests/e2e/test_live_predictions.py \
+            --base-url https://williamzujkowski.github.io/NOPE \
+            --check-predictions \
+            --check-early-warnings \
+            --check-api-endpoints \
+            --verify-performance
+            
+      - name: Send notifications
+        if: always()
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: |
+            NOPE Pipeline: ${{ job.status }}
+            Predictions Generated: Check dashboard
+            High Risk CVEs: ${{ steps.stats.outputs.high_risk_count }}
+            🐙 View: https://williamzujkowski.github.io/NOPE
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+          
+      - name: Trigger model retraining (if needed)
+        if: success()
+        run: |
+          python scripts/check_model_performance.py \
+            --threshold 0.75 \
+            --trigger-retrain-workflow

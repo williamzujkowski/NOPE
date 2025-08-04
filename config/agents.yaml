@@ -1,0 +1,290 @@
+# NOPE Agent Configuration
+# This file defines the configuration for all agent types in the NOPE platform
+
+# Global agent settings
+global:
+  pool_size: 10
+  max_retries: 3
+  timeout: 300
+  log_level: INFO
+  metrics_enabled: true
+  health_check_interval: 60
+
+# Data Collection Agents
+data_collection:
+  nvd_agent:
+    enabled: true
+    name: "NVD Data Collector"
+    description: "Collects CVE data from NIST NVD"
+    source_url: "https://services.nvd.nist.gov/rest/json/cves/2.0"
+    update_interval: 3600  # 1 hour
+    batch_size: 1000
+    rate_limit: 50  # requests per minute
+    api_key: "${NVD_API_KEY}"
+    filters:
+      - "cvssV3Severity"
+      - "lastModified"
+    fields:
+      - "cve.id"
+      - "cve.description"
+      - "cve.metrics"
+      - "cve.published"
+      - "cve.lastModified"
+
+  mitre_agent:
+    enabled: true
+    name: "MITRE CVE Collector"
+    description: "Collects CVE data from MITRE"
+    source_url: "https://cve.mitre.org/data/downloads/allitems.csv"
+    update_interval: 7200  # 2 hours
+    batch_size: 500
+    rate_limit: 30
+    format: "csv"
+
+  cisa_agent:
+    enabled: true
+    name: "CISA KEV Collector"
+    description: "Collects Known Exploited Vulnerabilities from CISA"
+    source_url: "https://www.cisa.gov/sites/default/files/csv/known_exploited_vulnerabilities.csv"
+    update_interval: 1800  # 30 minutes
+    batch_size: 100
+    rate_limit: 20
+
+  github_agent:
+    enabled: true
+    name: "GitHub Advisory Collector"
+    description: "Collects security advisories from GitHub"
+    source_url: "https://api.github.com/advisories"
+    update_interval: 3600
+    batch_size: 200
+    rate_limit: 60
+    api_key: "${GITHUB_TOKEN}"
+
+  twitter_agent:
+    enabled: false
+    name: "Twitter Security Feed"
+    description: "Monitors security-related tweets"
+    update_interval: 900  # 15 minutes
+    keywords:
+      - "CVE-"
+      - "0day"
+      - "exploit"
+      - "vulnerability"
+    api_key: "${TWITTER_API_KEY}"
+
+# Analysis Agents
+analysis:
+  ml_trainer:
+    enabled: true
+    name: "ML Model Trainer"
+    description: "Trains machine learning models on CVE data"
+    models:
+      - lstm
+      - random_forest
+      - xgboost
+      - lightgbm
+      - catboost
+      - transformer
+    training_schedule: "0 2 * * *"  # Daily at 2 AM
+    validation_split: 0.2
+    test_split: 0.1
+    epochs: 100
+    batch_size: 64
+    early_stopping: true
+    model_path: "models/"
+
+  feature_extractor:
+    enabled: true
+    name: "Feature Extractor"
+    description: "Extracts features from CVE data"
+    features:
+      - "text_embeddings"
+      - "temporal_features"
+      - "severity_metrics"
+      - "vendor_features"
+      - "cwe_categories"
+    embedding_model: "sentence-transformers/all-MiniLM-L6-v2"
+    max_features: 10000
+
+  predictor:
+    enabled: true
+    name: "CVE Predictor"
+    description: "Makes predictions using ensemble models"
+    ensemble_strategy: "weighted_voting"
+    prediction_threshold: 0.7
+    batch_prediction: true
+    real_time: true
+    cache_predictions: true
+    cache_ttl: 3600
+
+# Correlation Agents
+correlation:
+  pattern_matcher:
+    enabled: true
+    name: "Pattern Matcher"
+    description: "Identifies patterns in CVE data"
+    algorithms:
+      - "sequence_matching"
+      - "clustering"
+      - "association_rules"
+    similarity_threshold: 0.8
+    min_support: 0.1
+    min_confidence: 0.6
+
+  threat_correlator:
+    enabled: true
+    name: "Threat Correlator"
+    description: "Correlates CVEs with threat intelligence"
+    sources:
+      - "misp"
+      - "otx"
+      - "virustotal"
+    correlation_window: 86400  # 24 hours
+    confidence_threshold: 0.7
+
+  timeline_analyzer:
+    enabled: true
+    name: "Timeline Analyzer"
+    description: "Analyzes temporal patterns in vulnerabilities"
+    time_windows:
+      - 86400    # 1 day
+      - 604800   # 1 week
+      - 2592000  # 1 month
+    trend_detection: true
+    seasonality_detection: true
+
+# Notification Agents
+notification:
+  alert_manager:
+    enabled: true
+    name: "Alert Manager"
+    description: "Manages and sends alerts"
+    channels:
+      - email
+      - slack
+      - webhook
+    severity_mapping:
+      CRITICAL: "immediate"
+      HIGH: "urgent"
+      MEDIUM: "normal"
+      LOW: "low_priority"
+    rate_limiting: true
+    deduplication: true
+    escalation_rules: true
+
+  email_notifier:
+    enabled: true
+    name: "Email Notifier"
+    smtp_server: "${SMTP_SERVER}"
+    smtp_port: 587
+    smtp_user: "${SMTP_USER}"
+    smtp_password: "${SMTP_PASSWORD}"
+    from_email: "alerts@nope.security"
+    templates_path: "templates/email/"
+
+  slack_notifier:
+    enabled: true
+    name: "Slack Notifier"
+    webhook_url: "${SLACK_WEBHOOK_URL}"
+    channel: "#security-alerts"
+    username: "NOPE Bot"
+    templates_path: "templates/slack/"
+
+  webhook_notifier:
+    enabled: true
+    name: "Webhook Notifier"
+    endpoints:
+      - url: "${WEBHOOK_URL_1}"
+        method: "POST"
+        headers:
+          Authorization: "Bearer ${WEBHOOK_TOKEN_1}"
+      - url: "${WEBHOOK_URL_2}"
+        method: "POST"
+    retry_attempts: 3
+    timeout: 30
+
+# Monitoring Agents
+monitoring:
+  health_monitor:
+    enabled: true
+    name: "Health Monitor"
+    description: "Monitors system health and performance"
+    check_interval: 60
+    metrics:
+      - "cpu_usage"
+      - "memory_usage"
+      - "disk_usage"
+      - "network_io"
+      - "database_connections"
+      - "redis_connections"
+      - "api_response_time"
+    thresholds:
+      cpu_usage: 80
+      memory_usage: 85
+      disk_usage: 90
+      api_response_time: 1000  # ms
+
+  performance_monitor:
+    enabled: true
+    name: "Performance Monitor"
+    description: "Monitors performance metrics"
+    metrics_storage: "prometheus"
+    retention_period: 2592000  # 30 days
+    alerting_rules:
+      - name: "high_cpu"
+        condition: "cpu_usage > 90"
+        duration: "5m"
+      - name: "slow_api"
+        condition: "api_response_time > 2000"
+        duration: "2m"
+
+  log_analyzer:
+    enabled: true
+    name: "Log Analyzer"
+    description: "Analyzes system logs for issues"
+    log_sources:
+      - "/var/log/nope/"
+      - "/var/log/nginx/"
+      - "/var/log/postgresql/"
+    patterns:
+      - "ERROR"
+      - "CRITICAL"
+      - "exception"
+      - "timeout"
+    real_time: true
+    alert_on_patterns: true
+
+# Agent Dependencies
+dependencies:
+  startup_order:
+    - monitoring.health_monitor
+    - data_collection.nvd_agent
+    - data_collection.mitre_agent
+    - data_collection.cisa_agent
+    - analysis.feature_extractor
+    - analysis.ml_trainer
+    - correlation.pattern_matcher
+    - notification.alert_manager
+
+  shutdown_order:
+    - notification.alert_manager
+    - correlation.pattern_matcher
+    - analysis.predictor
+    - analysis.ml_trainer
+    - data_collection.nvd_agent
+    - monitoring.health_monitor
+
+# Resource Limits
+resources:
+  cpu_limit: 2.0
+  memory_limit: "4Gi"
+  disk_limit: "10Gi"
+  network_limit: "100Mbps"
+
+# Security Settings
+security:
+  encryption_enabled: true
+  tls_required: true
+  api_key_rotation: true
+  audit_logging: true
+  secret_management: "vault"

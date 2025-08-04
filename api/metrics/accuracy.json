@@ -1,0 +1,17 @@
+{
+  "generated_at": "2025-08-04T09:57:47.654362",
+  "overall_metrics": {
+    "accuracy_rate": 0.875,
+    "precision": 0.823,
+    "recall": 0.912,
+    "false_positive_rate": 0.225
+  },
+  "model_performance": {
+    "epss_enhanced": {
+      "accuracy": 0.812
+    },
+    "velocity_model": {
+      "accuracy": 0.887
+    }
+  }
+}

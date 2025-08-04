@@ -1,0 +1,166 @@
+{
+  "predictions": [
+    {
+      "cve_id": "CVE-2024-12345",
+      "risk_score": 92,
+      "confidence": 0.87,
+      "will_be_exploited": true,
+      "time_to_exploitation": 7,
+      "threat_level": "CRITICAL",
+      "description": "Critical authentication bypass vulnerability in enterprise web applications",
+      "vendor": "Microsoft",
+      "product": "Exchange Server",
+      "cvss_score": 9.8,
+      "epss_score": 0.82,
+      "date_published": "2024-08-01T00:00:00Z",
+      "prediction_date": "2024-08-04T00:00:00Z",
+      "key_risk_factors": [
+        {
+          "factor": "High EPSS Score",
+          "description": "Exploitation probability exceeds 80%",
+          "severity": "high",
+          "contribution": 0.35
+        },
+        {
+          "factor": "Active Reconnaissance",
+          "description": "Scanning activity detected on honeypot networks",
+          "severity": "high",
+          "contribution": 0.28
+        },
+        {
+          "factor": "Proof of Concept Available",
+          "description": "Working exploit code published on GitHub", 
+          "severity": "medium",
+          "contribution": 0.22
+        }
+      ],
+      "model_contributions": {
+        "epss_enhanced": 0.25,
+        "velocity_model": 0.18,
+        "threat_actor_model": 0.22,
+        "temporal_model": 0.12,
+        "practicality_model": 0.15,
+        "community_model": 0.08
+      },
+      "recommendation": "IMMEDIATE PATCH: Critical vulnerability with active exploitation expected within 7 days"
+    },
+    {
+      "cve_id": "CVE-2024-12346",
+      "risk_score": 78,
+      "confidence": 0.73,
+      "will_be_exploited": true,
+      "time_to_exploitation": 14,
+      "threat_level": "HIGH",
+      "description": "Remote code execution vulnerability in popular web framework",
+      "vendor": "Apache",
+      "product": "Struts",
+      "cvss_score": 8.5,
+      "epss_score": 0.71,
+      "date_published": "2024-07-28T00:00:00Z",
+      "prediction_date": "2024-08-04T00:00:00Z",
+      "key_risk_factors": [
+        {
+          "factor": "Widespread Usage",
+          "description": "Framework used by thousands of applications",
+          "severity": "high",
+          "contribution": 0.31
+        },
+        {
+          "factor": "Historical Pattern",
+          "description": "Similar vulnerabilities have been quickly exploited",
+          "severity": "medium",
+          "contribution": 0.24
+        }
+      ],
+      "model_contributions": {
+        "epss_enhanced": 0.28,
+        "velocity_model": 0.15,
+        "threat_actor_model": 0.18,
+        "temporal_model": 0.14,
+        "practicality_model": 0.17,
+        "community_model": 0.08
+      },
+      "recommendation": "HIGH PRIORITY: Schedule patching within 48 hours"
+    },
+    {
+      "cve_id": "CVE-2024-12347",
+      "risk_score": 65,
+      "confidence": 0.68,
+      "will_be_exploited": false,
+      "time_to_exploitation": null,
+      "threat_level": "ELEVATED",
+      "description": "Information disclosure vulnerability in database management system",
+      "vendor": "Oracle",
+      "product": "Database",
+      "cvss_score": 7.2,
+      "epss_score": 0.54,
+      "date_published": "2024-07-30T00:00:00Z",
+      "prediction_date": "2024-08-04T00:00:00Z",
+      "key_risk_factors": [
+        {
+          "factor": "Database Exposure",
+          "description": "Potential for sensitive data access",
+          "severity": "medium",
+          "contribution": 0.27
+        }
+      ],
+      "model_contributions": {
+        "epss_enhanced": 0.22,
+        "velocity_model": 0.12,
+        "threat_actor_model": 0.16,
+        "temporal_model": 0.18,
+        "practicality_model": 0.14,
+        "community_model": 0.18
+      },
+      "recommendation": "MODERATE RISK: Include in next patch cycle"
+    },
+    {
+      "cve_id": "CVE-2024-12348",
+      "risk_score": 45,
+      "confidence": 0.62,
+      "will_be_exploited": false,
+      "time_to_exploitation": null,
+      "threat_level": "MODERATE",
+      "description": "Client-side vulnerability in web browser",
+      "vendor": "Google",
+      "product": "Chrome",
+      "cvss_score": 6.1,
+      "epss_score": 0.38,
+      "date_published": "2024-08-02T00:00:00Z",
+      "prediction_date": "2024-08-04T00:00:00Z",
+      "key_risk_factors": [
+        {
+          "factor": "User Interaction Required",
+          "description": "Requires user to visit malicious website",
+          "severity": "low",
+          "contribution": 0.18
+        }
+      ],
+      "model_contributions": {
+        "epss_enhanced": 0.18,
+        "velocity_model": 0.14,
+        "threat_actor_model": 0.12,
+        "temporal_model": 0.16,
+        "practicality_model": 0.22,
+        "community_model": 0.18
+      },
+      "recommendation": "LOW RISK: Monitor for changes"
+    }
+  ],
+  "metadata": {
+    "total_predictions": 4,
+    "high_risk_count": 2,
+    "last_updated": "2024-08-04T04:32:56Z",
+    "data_sources": [
+      "EPSS Daily Feed",
+      "CISA KEV Catalog", 
+      "GitHub Advisory DB",
+      "CVE Database",
+      "Honeypot Networks",
+      "Threat Intelligence Feeds"
+    ],
+    "model_version": "3.0.0",
+    "accuracy_rate": 0.87,
+    "false_positive_rate": 0.13
+  }
+}

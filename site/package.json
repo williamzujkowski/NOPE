@@ -1,0 +1,54 @@
+{
+  "name": "nope-site",
+  "version": "3.0.0",
+  "description": "NOPE - Predictive CVE Intelligence Platform Frontend",
+  "type": "module",
+  "scripts": {
+    "clean": "rm -rf _site api",
+    "prebuild": "npm run clean",
+    "build": "eleventy --quiet",
+    "build:watch": "eleventy --watch",
+    "serve": "eleventy --serve --port=8080",
+    "dev": "concurrently \"npm run serve\" \"npm run watch:css\"",
+    "watch:css": "npm run build:css -- --watch",
+    "build:css": "tailwindcss -i ./assets/css/main.css -o ./_site/assets/css/main.css --minify",
+    "test": "playwright test",
+    "test:unit": "vitest",
+    "lint:js": "eslint assets/js --ext .js",
+    "lint:css": "stylelint assets/css/**/*.css",
+    "format": "prettier --write .",
+    "lighthouse": "lhci autorun",
+    "analyze": "npm run build && bundlesize"
+  },
+  "dependencies": {
+    "@11ty/eleventy": "^3.0.0",
+    "luxon": "^3.4.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.48.2",
+    "eslint": "^9.13.0",
+    "eslint-config-google": "^0.14.0",
+    "prettier": "^3.3.3",
+    "vitest": "^2.1.4",
+    "concurrently": "^9.0.1",
+    "tailwindcss": "^3.4.0",
+    "stylelint": "^16.10.0",
+    "@lhci/cli": "^0.14.0",
+    "bundlesize": "^0.18.2"
+  },
+  "bundlesize": [
+    {
+      "path": "_site/assets/js/*.js",
+      "maxSize": "50kb",
+      "compression": "gzip"
+    },
+    {
+      "path": "_site/assets/css/*.css", 
+      "maxSize": "20kb",
+      "compression": "gzip"
+    }
+  ],
+  "engines": {
+    "node": ">=20.0.0"
+  }
+}

@@ -1,0 +1,45 @@
+{
+  "title": "NOPE - Network Operational Patch Evaluator",
+  "description": "Predictive CVE Intelligence Platform using EPSS filtering and machine learning to identify vulnerabilities with high exploitation probability",
+  "url": "https://williamzujkowski.github.io/NOPE",
+  "version": "3.0.0",
+  "buildDate": "2024-08-04",
+  "author": {
+    "name": "NOPE Development Team",
+    "email": "nope@security.io",
+    "url": "https://github.com/williamzujkowski/NOPE"
+  },
+  "social": {
+    "github": "https://github.com/williamzujkowski/NOPE",
+    "twitter": "@NOPESecurity"
+  },
+  "features": {
+    "realTimeUpdates": true,
+    "machineLearning": true,
+    "earlyWarningSystem": true,
+    "multiModelEnsemble": true,
+    "webSocketSupport": true,
+    "mobileOptimized": true,
+    "accessibilityCompliant": true,
+    "performanceOptimized": true
+  },
+  "thresholds": {
+    "epssMinimum": 0.6,
+    "confidenceMinimum": 0.5,
+    "riskScoreHigh": 70,
+    "riskScoreCritical": 90,
+    "maxDailyCves": 8,
+    "targetDailyCves": 5
+  },
+  "performance": {
+    "targetLoadTime": 3,
+    "targetLighthouseScore": 90,
+    "cacheMaxAge": 300,
+    "apiTimeout": 5000
+  },
+  "analytics": {
+    "enabled": true,
+    "trackingId": "NOPE-ANALYTICS-2024",
+    "cookieConsent": false
+  }
+}
