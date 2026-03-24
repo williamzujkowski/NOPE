@@ -1,6 +1,6 @@
 # NOPE Backend Requirements
 # Core async framework
-aiohttp==3.10.10
+aiohttp==3.12.14
 aiosqlite==0.20.0
 asyncio-throttle==1.0.2
 
