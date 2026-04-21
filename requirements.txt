@@ -26,7 +26,7 @@ click==8.1.7
 rich==13.9.2
 
 # Environment management
-python-dotenv==1.0.1
+python-dotenv==1.2.2
 
 # Monitoring and metrics
 prometheus-client==0.21.0
